@@ -12,8 +12,6 @@ load_dotenv()
 if __name__ == "__main__":
     print("Ingesting...")
     print(sys.executable)
-    print(sys.version)
-    print(os.environ.get("PINECONE_API_KEY"))
     print(os.environ.get("INDEX_NAME"))
 
     loader = UnstructuredLoader(
