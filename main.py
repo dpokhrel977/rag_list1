@@ -1,8 +1,11 @@
 import os
+from operator import itemgetter
 
 from dotenv import load_dotenv
 from langchain.messages import HumanMessage
+from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 
@@ -59,9 +62,36 @@ def retrieval_chain_without_lcel(query: str):
     return response.content
 
 
+# ==============================================
+# IMPLEMENTATION 2: with LCEL (LangChain Expresssion Language)--BETTER APPROACH
+# ==============================================
+def create_reterival_chain_with_lcel():
+    """Creates a retrieval chain using LangChain Expression Language (LCEL).
+
+    Advantages:
+    -Simpler and more elegant than manual implementation.
+    -Built-in support for streaming responses.
+    -Asynchronous support is easier to implement.
+    -Easier to compose with other chains.
+    --Better debuggability and maintainability amd obervability.
+    """
+    retrieval_chain = (
+        RunnablePassthrough.assign(
+            context=itemgetter("question") | retriever | format_documents
+        )
+        | prompt_template
+        | llm
+        | StrOutputParser()
+    )
+
+    # retrieval_chain = prompt_template | llm | StrOutputParser()
+    return retrieval_chain
+
+
 if __name__ == "__main__":
     print("Components initialized successfully.")
     query = "What is the pinecone in maching learning?"
+    create_reterival_chain_with_lcel()
     # =================================================
     # Option 0: Raw invocation without RAG
     # =================================================
@@ -81,3 +111,14 @@ if __name__ == "__main__":
     result_retrieval_chain = retrieval_chain_without_lcel(query)
     print("Answer")
     print(result_retrieval_chain)
+
+    # =================================================
+    # Option 2: Retrieval chain with LCEL
+    # =================================================
+    print("\n" + "=" * 70)
+    print("IMPLEMENTAITON 2: Retrieval chain with LCEL")
+    print("=" * 70)
+    retrieval_chain_with_lcel = create_reterival_chain_with_lcel()
+    result_retrieval_chain_lcel = retrieval_chain_with_lcel.invoke({"question": query})
+    print("Answer")
+    print(result_retrieval_chain_lcel)
